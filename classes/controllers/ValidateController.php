@@ -44,6 +44,8 @@ class ValidateController extends AbstractController
      */
     private function saveRequestResource($email){
         $ipAddress = $_SERVER['REMOVE_ADDR'];
+        $email = $email;
+        $status = '';
     }
 
     /**
