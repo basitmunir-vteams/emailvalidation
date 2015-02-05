@@ -1,9 +1,8 @@
 <?php
 /**
- * API framework front controller.
- * 
- * @package api-framework
- * @author  Martin Bean <martin@martinbean.co.uk>
+ * @package  Email Validation API
+ * @author   Muhammad Basit Munir <basit.munir@nxb.com.pk>
+ *
  */
 
 /**
@@ -11,11 +10,10 @@
  * 
  * @param string $class_name
  */
-function autoload_class($class_name) {
+function autoLoadClass($class_name) {
     $directories = array(
         'classes/',
         'classes/controllers/',
-        'classes/models/'
     );
     foreach ($directories as $directory) {
         $filename = $directory . $class_name . '.php';
@@ -29,7 +27,7 @@ function autoload_class($class_name) {
 /**
  * Register autoloader functions.
  */
-spl_autoload_register('autoload_class');
+spl_autoload_register('autoLoadClass');
 
 /**
  * Parse the incoming request.
@@ -38,18 +36,6 @@ $request = new Request();
 if (isset($_SERVER['PATH_INFO'])) {
     $request->url_elements = explode('/', trim($_SERVER['PATH_INFO'], '/'));
 }
-// $request->method = strtoupper($_SERVER['REQUEST_METHOD']);
-// switch ($request->method) {
-//     case 'GET':
-//         $request->parameters = $_GET;
-//     break;
-//     case 'POST':
-//         $request->parameters = $_POST;
-//     break;
-//     case 'PUT':
-//         parse_str(file_get_contents('php://input'), $request->parameters);
-//     break;
-// }
 
 /**
  * Route the request.

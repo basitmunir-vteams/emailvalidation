@@ -29,6 +29,17 @@ class ValidateController extends AbstractController
     {
         $email = isset($request->url_elements[2]) && !empty($request->url_elements[2]) ? true : false;
         if($email){
+            //check if it is not spammer if we receive 5 requests in a minute we will consider him as spammer and add that ip to black list.
+            $isBlackList = $this->checkIpAddress($_SERVER['REMOTE_ADDR']);
+
+            if(!$isBlackList) { // check if more than 5 times have been attempted in last one minute then add to black list and return error.
+                return array('status'=>'error', 'message'=>'Too Much Attempts, Blocked');
+            }
+
+            // keep record of request
+            $this->saveRequestResource($request->url_elements[2]);
+
+            // validate email address
             $response = $this->validateEmail($request->url_elements[2]);
             return $response;
         } else {
@@ -43,9 +54,15 @@ class ValidateController extends AbstractController
      * @return json string
      */
     private function saveRequestResource($email){
-        $ipAddress = $_SERVER['REMOVE_ADDR'];
+        $ipAddress = $_SERVER['REMOTE_ADDR'];
         $email = $email;
         $status = '';
+        $stmt = $this->db->prepare("insert into validation_requests (email,ip_address, date_created) values(:EMAIL, :IPADDRESS, NOW())");
+        $stmt->bindParam(':EMAIL', $email, PDO::PARAM_STR);
+        $stmt->bindParam(':IPADDRESS', $ipAddress, PDO::PARAM_STR);
+        $stmt->execute();
+
+        return true;
     }
 
     /**
@@ -91,6 +108,7 @@ class ValidateController extends AbstractController
      * 
      * @param  email $domain
      * @return bolean
+     * @status Depreciated not being used at all
      */
     private function checkDomain($domain, $iscocc = false)
     {
@@ -114,10 +132,9 @@ class ValidateController extends AbstractController
         $ch = curl_init($url);
         curl_setopt_array($ch, $options);
         $content = strip_tags(curl_exec($ch) );
-        var_dump($content);
         curl_close($ch);
-        var_dump(preg_match("/\b(a|A)".$domain." is already registered\b/",$content));
-            exit();
+        
+        
         if(!preg_match("/\b(a|A)vailable\b/",$content)):
             exit("there 1") ;
             return true;
@@ -136,19 +153,22 @@ class ValidateController extends AbstractController
     private function checkBlackList($email){
 
 
-        //array of blacklisted domains
-        $blackList = array('testing@test.com','anotheremail@mail.com','myemail@gmail.com','hellow@gmail.com');//sql call here
+        $stmt = $this->db->prepare("SELECT * FROM `blacklist_IPs` WHERE ip_address = :IPADDRESS ");
+        $stmt->bindParam(':IPADDRESS', $ipAddress, PDO::PARAM_STR);
+        $stmt->execute();
 
-      //  foreach($blackList as $email){    
-            if(in_array($email, $blackList) )
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if($stmt->rowCount() > 0 )
             {
                 return true;
                 //this email is in blacklist
             } else {
                 return false;
             }
-      //  }
 
     }
+
+
 
 }

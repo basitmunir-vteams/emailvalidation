@@ -22,4 +22,29 @@ abstract class AbstractController {
 
 	}
 
+	/**
+     * protected  method used to check how many requests received from this ip address in last 60 seconds.
+     * 
+     * @param  $ipAddress
+     * @return bool true or false
+     */
+	protected function checkIpAddress($ipAddress){
+		$stmt = $this->db->prepare("SELECT count(*) as count FROM `validation_requests` WHERE ip_address = :IPADDRESS AND TIMESTAMPDIFF( SECOND , date_created, NOW( ) ) <=60");       
+        $stmt->bindParam(':IPADDRESS', $ipAddress, PDO::PARAM_STR);
+        $stmt->execute();
+
+        $count = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if($count['count'] >= 5 ) {
+
+            $stmt = $this->db->prepare("INSERT INTO `blacklist_IPs` (ip_address, date_added) values (:IPADDRESS, NOW()) ON DUPLICATE KEY UPDATE date_added = NOW() ");
+            $stmt->bindParam(':IPADDRESS', $ipAddress, PDO::PARAM_STR);
+            $stmt->execute();
+            return false;
+
+        } else {
+            return true;
+        }
+	}
+
 }
